@@ -1,0 +1,16 @@
+# Don't upload test files
+/test*
+*.test
+
+# Use .exe extension for executable files to prevent uploading them
+# Don't upload executable files
+*.exe
+
+# Ignore .bak these are back-up files
+*.bak
+
+# Ignore .tgz zipped files for assignments
+*.tgz
+
+# Garbage collection between jobs
+/deleted/ 
