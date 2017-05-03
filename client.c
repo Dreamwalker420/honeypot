@@ -5,9 +5,6 @@
  * Compile Using this format:
  * $ gcc client.c -o client.exe
  *
- * $ gcc -Wall -Werror -pedantic client.c -o client.exe -pthread -lrt
- * TODO: Fix compile error on line 385
- *
  * Run from command line interface (CLI):
  * ./client.exe
  *
@@ -152,7 +149,6 @@ int main(int argc, char *argv[]){
 int configure_client_socket(char *IP_ADDRESS){
 	int sockfd;
 	struct sockaddr_in address;
-	memset(&address, 0, sizeof(address));
 
 	if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1){
 		perror("Client: Unable to create a socket.");
@@ -194,6 +190,11 @@ int configure_client_socket(char *IP_ADDRESS){
 
 // Called by main() to validate client socket connection to server
 void connect_client_to_server(int sockfd){
+	// #ifdef DEBUG
+	// 	printf("Go to sleep to test the timer.\n");
+	// 	sleep(5);
+	// #endif
+
 	int nread, nwrite;
 	// Check server protocol
 	char *protocol = "<rembash>\n";
@@ -272,7 +273,7 @@ void relay_command_and_read_server_socket(int sockfd){
 
 	int nread, nwrite, total;
 	char from_socket[BUFFER_SIZE];
-	char command[BUFFER_SIZE];
+	char command;
 	// Start a new subprocess to listen to terminal commands and send to PTY
 	pid_t read_cpid;
 	switch(read_cpid = fork()){
@@ -283,24 +284,19 @@ void relay_command_and_read_server_socket(int sockfd){
 			exit(EXIT_FAILURE);
 		case 0:
 			// Child process to read command lines from terminal
-			// Wrtie to closed connection produces an error instead of a signal
-			signal(SIGPIPE,SIG_IGN);
+
 
 			#ifdef DEBUG
 				printf("Client sub-process.\n");
 			#endif
 
 			// Read from client terminal
-			nwrite = 0;
-			while(nwrite != -1 && (nread = read(0,command,BUFFER_SIZE)) > 0){
-				total = 0;
-				do {
+			while((nread = read(0,&command,1)) > 0){
+				
 					// Write to remote socket
-					if((nwrite = write(sockfd,command+total,nread-total)) == -1){
+					if((nwrite = write(sockfd,&command,1)) == -1){
 						break;
 					}
-					total += nwrite;
-				} while(total < nread);
 			}
 			if(errno){
 				perror("Client: Error when reading input command.");
