@@ -84,8 +84,6 @@ int epoll_fd_pairs[MAX_CLIENTS * 2 + 5] = { -1 };
 // 1 : Client is attempting protocol exchange
 // 2 : Client is sending input
 int client_status_record[MAX_CLIENTS] = { -1 };
-// Store client timer_id
-void *client_timer_id[MAX_CLIENTS * sizeof(timer_t)];
 
 // Begin main()
 int main(){
@@ -513,6 +511,86 @@ void *handle_epoll(void * _){
 // End of handle_epoll()
 
 
+// Called by relay_data() to initiate protocol exchange with server
+// Accepts the socket file descriptor assigned to the client: connect_fd
+// Returns 0 on success, -1 on failure
+int start_protocol_exchange(int connect_fd){
+	// Start a timer to limit protocol exchange
+	struct itimerspec ts;
+	memset(&ts, 0, sizeof(ts));
+
+	struct sigevent sevp;
+	memset(&sevp, 0, sizeof(sevp));
+
+	timer_t timer_id;
+	int nwrite = 0;
+	// Prevent this value or the pointer from being changed
+	const char * const server_protocol = "<rembash>\n";
+
+	// Timer need only expire once
+	ts.it_interval.tv_sec = 0;
+	ts.it_interval.tv_nsec = 0;
+	// Timer should be 5 seconds
+	ts.it_value.tv_sec = 5;
+    ts.it_value.tv_nsec = 0;
+
+    // Notify by thread
+	sevp.sigev_notify = SIGEV_THREAD_ID;
+	sevp.sigev_signo = SIGRTMAX;
+	sevp._sigev_un._tid = syscall(SYS_gettid);
+	sevp.sigev_value.sival_int = connect_fd;
+
+    // Create a timer to limit protocol exchange
+    if(timer_create(CLOCKID, &sevp, &timer_id) == -1){
+    	if(errno == EINVAL){
+    		perror("Server: Invalid Inputs: Clock ID, Signal Structure or Timer ID");
+    	}
+    	else if (errno == ENOMEM){
+    		perror("Server: Could not allocate memory");
+    	}
+    	else if (errno == EAGAIN){
+    		perror("Server: Kernel Allocation");
+    	}
+    	else{
+	    	perror("Server: Unable to create a timer for protocol exchange.");
+	    }
+    	return -1;
+    }
+
+	// Send server protocol to client		
+	if((nwrite = write(connect_fd, server_protocol, strlen(server_protocol))) == -1){
+		perror("Server: Unable to communicate protocol to client.");
+		return -1;
+	}
+
+    // Activate the timer after sending initial protocol
+    // This will allow the client 5 seconds to respond with a correct shared secret
+    if(timer_settime(timer_id, 0, &ts, NULL) == -1){
+       	perror("Server: Unable to start timer for protocol exchange.");
+    	return -1;	
+    }
+
+	// Increment client status
+	client_status_record[connect_fd] = 1;
+
+	// To add to the interest list
+	struct epoll_event evlist[2];
+	memset(&evlist, 0, sizeof(evlist));
+
+	// Add client file descriptors to epoll	
+	evlist[0].events = EPOLLIN;
+	evlist[0].data.fd = connect_fd;
+    if(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, connect_fd, evlist) == -1){
+	    perror("Server: Unable to add to ePoll interest list.");
+	    return -1;
+	}
+
+	// Protocol exchange initiated
+	return 0;
+}
+// End of start_protocol_exhcange()
+
+
 // Called by thread pool workers to handle the io
 // Accepts the socket file descriptor assigned to the client: connect_fd
 void relay_data(int file_descriptor){
@@ -562,11 +640,9 @@ void relay_data(int file_descriptor){
 			break;
 		default:
 			// This can only occur from an error
-			fprintf(stderr, "Server: Critical erro handling client.\n");
-			destroy_connection(file_descriptor);
+			// TODO: Error check this situation
 			break;
 	}
-	return;
 }
 // End relay_data()
 
@@ -651,87 +727,3 @@ void signal_handler(int sig, siginfo_t *si, void *uc){
 	#endif
 }
 // End of signal_handler()
-
-
-// Called by relay_data() to initiate protocol exchange with server
-// Accepts the socket file descriptor assigned to the client: connect_fd
-// Returns 0 on success, -1 on failure
-int start_protocol_exchange(int connect_fd){
-	// Start a timer to limit protocol exchange
-	struct itimerspec ts;
-	memset(&ts, 0, sizeof(ts));
-
-	struct sigevent sevp;
-	memset(&sevp, 0, sizeof(sevp));
-
-	timer_t timer_id;
-	int nwrite = 0;
-	// Prevent this value or the pointer from being changed
-	const char * const server_protocol = "<rembash>\n";
-
-	// Timer need only expire once
-	ts.it_interval.tv_sec = 0;
-	ts.it_interval.tv_nsec = 0;
-	// Timer should be 5 seconds
-	ts.it_value.tv_sec = 5;
-    ts.it_value.tv_nsec = 0;
-
-    // Notify by thread
-	sevp.sigev_notify = SIGEV_THREAD_ID;
-	sevp.sigev_signo = SIGRTMAX;
-	sevp._sigev_un._tid = syscall(SYS_gettid);
-	sevp.sigev_value.sival_int = connect_fd;
-
-    // Create a timer to limit protocol exchange
-    if(timer_create(CLOCKID, &sevp, &timer_id) == -1){
-    	if(errno == EINVAL){
-    		perror("Server: Invalid Inputs: Clock ID, Signal Structure or Timer ID");
-    	}
-    	else if (errno == ENOMEM){
-    		perror("Server: Could not allocate memory");
-    	}
-    	else if (errno == EAGAIN){
-    		perror("Server: Kernel Allocation");
-    	}
-    	else{
-	    	perror("Server: Unable to create a timer for protocol exchange.");
-	    }
-    	return -1;
-    }
-
-	// Send server protocol to client		
-	if((nwrite = write(connect_fd, server_protocol, strlen(server_protocol))) == -1){
-		perror("Server: Unable to communicate protocol to client.");
-		return -1;
-	}
-
-    // Activate the timer after sending initial protocol
-    // This will allow the client 5 seconds to respond with a correct shared secret
-    if(timer_settime(timer_id, 0, &ts, NULL) == -1){
-       	perror("Server: Unable to start timer for protocol exchange.");
-    	return -1;	
-    }
-
-    // Store timer_id to recover with timer_delete
-
-
-
-	// Increment client status
-	client_status_record[connect_fd] = 1;
-
-	// To add to the interest list
-	struct epoll_event evlist[2];
-	memset(&evlist, 0, sizeof(evlist));
-
-	// Add client file descriptors to epoll	
-	evlist[0].events = EPOLLIN;
-	evlist[0].data.fd = connect_fd;
-    if(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, connect_fd, evlist) == -1){
-	    perror("Server: Unable to add to ePoll interest list.");
-	    return -1;
-	}
-
-	// Protocol exchange initiated
-	return 0;
-}
-// End of start_protocol_exhcange()

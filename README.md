@@ -1,9 +1,12 @@
-# Kirk Powell
 # CS 410/591 - Computer Security
-# Final Project
+# Final Project : Honeypot
 
-# honeypot
-Simple Honeypot Implementation
+## Descriptiong:
+A simple Honeypot Implementation
+
+## Contact
+Kirk Powell
+kirk.powell@siu.edu
 
 # Installation
 Do not use this service without being aware of the full consequence.  It will open a bash terminal to the machine with no restrictions.  It is designed to entice a hacker to track their activities and garner as much information about them before the honeypot is compromised, destroyed, or otherwise incapacitated.

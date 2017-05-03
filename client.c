@@ -21,7 +21,7 @@
  */
 
 // TODO: Turn this off when submitting for grading
-#define DEBUG 1
+// #define DEBUG 1
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -385,7 +385,6 @@ int tty_set_raw(int fd){
 	}
 
 	// Check if attributes have already been set
-	// TODO: Compile error because this always evaluate to zero, but must be set?
 	if(&ttyOrig != NULL){
 		ttyOrig = t;
 	}
