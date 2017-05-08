@@ -142,7 +142,7 @@ int main(){
 			#endif
 
 			// Record access attempt
-		    char message[255] = "Client initiated contact\n";
+		    char message[255] = "Client initiated contact\n\0";
 		    write_to_log(message);
 
 			// A successful client should create a thread to handle the client and return the server to continue listening for another connection.
@@ -700,29 +700,29 @@ void write_to_log(char *write_sentence){
 		printf("Status: %s\n", write_sentence);
 	#endif
 
-   // Set a file pointer
-   FILE *fptr;
+    // Set a file pointer
+    FILE *fptr;
 
-   // Append to end of file
-   fptr = fopen("logfile.txt", "a");
+    // Append to end of file
+    fptr = fopen("logfile.txt", "a");
 
-   		// TODO: Add timestamp
-		// http://stackoverflow.com/questions/29539671/correcting-timestamp-on-c-code-log-file#29539790
-		// char dt[20]; // space enough for DD/MM/YYYY HH:MM:SS and terminator
-		// struct tm tm;
-		// time_t current_time;
+	// http://stackoverflow.com/questions/29539671/correcting-timestamp-on-c-code-log-file#29539790
+	char dt[275]; // space enough for DD/MM/YYYY HH:MM:SS and terminator and the 255 for the message
+	struct tm tm;
+	time_t current_time;
 
-		// current_time = time(NULL);
-		// tm = *localtime(&current_time); // convert time_t to struct tm
-		// strftime(dt, sizeof dt, "%d/%m/%Y %H:%M:%S", &tm); // format
+	current_time = time(NULL);
+	tm = *localtime(&current_time); // convert time_t to struct tm
+	strftime(dt, sizeof dt, "%d/%m/%Y %H:%M:%S ", &tm); // format
 
-		// fprintf(currfd, "%s %d %d\n", dt, temp, humidity);
+   	// Add timestamp
+    strcat(dt, write_sentence);
 
-   // Add message
-   fprintf(fptr,"%s", write_sentence);
+    // Add message
+    fprintf(fptr,"%s", dt);
 
-   // Close file descriptor
-   fclose(fptr);
+    // Close file descriptor
+    fclose(fptr);
 
 }
 // End of write_to_log()
