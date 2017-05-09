@@ -1,5 +1,5 @@
 # Don't upload logfiles
-/server/log/*.log
+/server/*.log
 
 # Don't upload test files
 /test*

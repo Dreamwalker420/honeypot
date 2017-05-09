@@ -11,6 +11,7 @@ kirk.powell@siu.edu
 # Installation
 Do not use this service without being aware of the full consequence.  It will open a bash terminal to the machine with no restrictions.  It is designed to entice a hacker to track their activities and garner as much information about them before the honeypot is compromised, destroyed, or otherwise incapacitated.
 
-Set up on a server and run ```./server.exe```
+Compile the ```server.c``` file: ```gcc server.exe -o server.c```  
+Set up on any computer connected to the internet and run ```./server.exe```
 
 Client connections are made through IP access ```./client.exe 127.0.0.1```

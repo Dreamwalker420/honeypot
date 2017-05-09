@@ -22,7 +22,7 @@
 
 // Debug specific to the logfile
 // TODO: Turn this off when submitting for grading
-#define DEBUGLOG 1
+// #define DEBUGLOG 1
 
 // Feature Test Macro for pseudalterminal device (PTY)
 #define _XOPEN_SOURCE 600
