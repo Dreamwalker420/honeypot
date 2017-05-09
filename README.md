@@ -15,3 +15,7 @@ Compile the ```server.c``` file: ```gcc server.exe -o server.c```
 Set up on any computer connected to the internet and run ```./server.exe```
 
 Client connections are made through IP access ```./client.exe 127.0.0.1```
+
+## Presentation
+
+There is a set of slides (presentation.odp) that explains what a honeypot is and how it works.  Review this material if you are unclear about honeypots.
