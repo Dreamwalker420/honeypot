@@ -1,3 +1,6 @@
+# Don't upload logfiles
+/server/log/*.log
+
 # Don't upload test files
 /test*
 *.test

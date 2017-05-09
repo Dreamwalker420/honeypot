@@ -723,13 +723,17 @@ void write_to_log(char *write_sentence){
 	current_time = time(NULL);
 	tm = *localtime(&current_time); // convert time_t to struct tm
 	strftime(dt, sizeof dt, "%d/%m/%Y %H:%M:%S ", &tm); // format timestamp in file
-	
-    // Build filename
 	strftime(date, sizeof date, "%Y-%m-%d-server.log", &tm); // format filename
-	strcat(date, "\0");
 
 	// Set a file pointer
     FILE *fptr;
+
+    // Build filename
+    // char filename[27];
+    // char filedescription[16] = "-server.log\0";
+    // strcat(filename,date);
+    // strcat(filename,filedescription);
+    strcat(date, "\0");
 
     // Append to end of file
     fptr = fopen(date, "a");
