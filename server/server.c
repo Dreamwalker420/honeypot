@@ -52,7 +52,7 @@
 
 // Declared Constants
 // Set shared secret
-#define SECRET "<cs407rembash>\n"
+#define SECRET "<cs410591>\n"
 // Set the port to be used by server and clients
 #define PORT 4070
 // Set buffer size for pty slave name
